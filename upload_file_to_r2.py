@@ -17,6 +17,9 @@ R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME")
 
 MONGO_CONTAINER = os.getenv("MONGO_CONTAINER")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
+MONGO_USER = os.getenv("MONGO_USER")
+MONGO_PASS = os.getenv("MONGO_PASS")
+MONGO_AUTH_DB = os.getenv("MONGO_AUTH_DB", "admin")
 
 # Configuración de R2
 s3 = boto3.client(
@@ -37,10 +40,14 @@ def ejecutar_backup_docker():
     print(f"Extrayendo backup desde el contenedor: {MONGO_CONTAINER}...")
 
     try:
-        # COMANDO CLAVE: docker exec
-        # Usamos '-' en --archive para que mongodump envíe el flujo de datos a la salida estándar (stdout)
-        # y lo redirigimos a un archivo en nuestra máquina host.
-        comando = f"docker exec {MONGO_CONTAINER} mongodump --db={MONGO_DB_NAME} --archive --gzip"
+        comando = (
+            f"docker exec {MONGO_CONTAINER} mongodump "
+            f"--username {MONGO_USER} "
+            f"--password {MONGO_PASS} "
+            f"--authenticationDatabase {MONGO_AUTH_DB} "
+            f"--db={MONGO_DB_NAME} "
+            f"--archive --gzip"
+        )
         
         with open(ruta_local, "wb") as f:
             subprocess.run(comando, shell=True, check=True, stdout=f)
